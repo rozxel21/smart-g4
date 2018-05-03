@@ -1,0 +1,22 @@
+{
+  "name": "smart-g4",
+  "version": "1.0.0",
+  "description": "integrating smart g4 into google home",
+  "main": "server.js",
+  "scripts": {
+    "start": "node .",
+    "start:dev": "nodenv -f ."
+  },
+  "keywords": [
+    "smart-g4"
+  ],
+  "author": "Axel Roz",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^2.5.9",
+    "express": "^4.16.3",
+    "mongoose": "^5.0.17",
+    "mysql": "^2.15.0",
+    "nodemon": "^1.17.3"
+  }
+}

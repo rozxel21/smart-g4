@@ -1,0 +1,43 @@
+body{
+	font-family: 'Roboto', sans-serif;
+	background-color: #eee;
+	height: 100%;
+}
+
+.wrap-box{
+	margin-top: 7em;
+	background-color: #fff;
+    padding: 2em;
+    box-shadow: 3px 3px #ccc, -3px 3px .4em #ccc;
+}
+
+.wrap-box h1{
+	margin-bottom: 1em;
+	font-size: 40px;
+}
+
+.login-btn{
+	color: #ffffff;
+	background-color: #0e9aef;
+	border: 0px #0e9aef;
+	width: 100%;
+	padding: 15px;
+}
+
+p{
+	color: #ccc;
+}
+
+a{
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.login-btn:hover{
+	background-color: #0c83cb
+}
+
+input[type='email'], input[type='password']{
+	border-radius: 0;
+	padding: 25px;
+}
