@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>Smart Hotel | Admin</title>
+
+        <link href="/css/bootstrap.min.css" rel="stylesheet">
+        <link href="/font-awesome/css/font-awesome.css" rel="stylesheet">
+
+        <link href="/css/animate.css" rel="stylesheet">
+        <link href="/css/style.css" rel="stylesheet">
+
+        <script src="/js/jquery-3.1.1.min.js"></script>
+
+    </head>
+
+    <body class="">
+
+        <div id="wrapper">
+            
+            <%- include('../partials/sidebar') %>
+
+            <div id="page-wrapper" class="gray-bg">
+
+                <%- include('../partials/content-header') %>
+
+                <div class="wrapper wrapper-content">
+                    <div class="ibox float-e-margins">
+                        <div class="ibox-title">
+                            <h5>Google Home Devices Edit</h5>
+                        </div>
+                        <div class="ibox-content">
+                            <div id='validation-message'></div>
+                            <form id="google-home-device-edit-form" action="/test/save" class="form-horizontal">
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Unique ID</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" name="unique-id" value="<%= device._id %>" class="form-control" disabled="true" /> 
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Model</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" name="model" value="<%= device.model %>" class="form-control" /> 
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Descriptions</label>
+                                    <div class="col-sm-10">
+                                        <textarea rows="4" class="form-control" style="resize: none">
+                                            <%= device.description %>
+                                        </textarea>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Assign Room</label>
+                                    <div class="col-sm-10">
+                                        <select name="room" class="form-control">
+                                            <option value=""> Unassign </option>
+                                            <% rooms.forEach(function(room) { %>
+                                                <option value="<%= room.id %>"> <%= room.location_name %></option>
+                                             <% }); %>
+                                        </select>
+                                         <script type="text/javascript">
+                                            if(<%= device.room_assign %> != "" && <%= device.room_assign %> != undefined)
+                                                $('select[name=room]').val("<%= device.room_assign %>");
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Status</label>
+                                    <div class="col-sm-10">
+                                        <select name="major-status" class="form-control">
+                                            <option value="1">Activate</option>
+                                            <option value="0">Deactivate</option>
+                                        </select> 
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-10">
+                                        <button class="btn btn-primary" type="submit"><i class="fa fa-check"></i>&nbsp;Submit</button>
+                                    </div>
+                                </div>
+                            </form> 
+                        </div>
+                    </div>
+                </div>
+
+                <%- include('../partials/footer') %>
+            </div>
+
+        </div>
+
+        <!-- Mainly scripts -->
+        <script src="/js/bootstrap.min.js"></script>
+        <script src="/js/plugins/metisMenu/jquery.metisMenu.js"></script>
+        <script src="/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+        <script src="/js/plugins/path/path.min.js"></script>
+
+        <!-- Custom and plugin javascript -->
+        <script src="/js/inspinia.js"></script>
+        <script src="/js/admin.js"></script>
+        <script src="/js/plugins/pace/pace.min.js"></script>
+
+       
+
+    </body>
+</html>

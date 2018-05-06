@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>Smart Hotel | Admin</title>
+
+        <link href="/css/bootstrap.min.css" rel="stylesheet">
+        <link href="/font-awesome/css/font-awesome.css" rel="stylesheet">
+
+        <link href="/css/animate.css" rel="stylesheet">
+        <link href="/css/style.css" rel="stylesheet">
+
+    </head>
+
+    <body class="">
+
+        <div id="wrapper">
+            
+            <%- include('./partials/sidebar') %>
+
+            <div id="page-wrapper" class="gray-bg">
+
+                <%- include('./partials/content-header') %>
+
+                <div class="wrapper wrapper-content">
+                    <div class="ibox float-e-margins">
+                        <div class="ibox-title">
+                            <h5>Rooms</h5>
+                        </div>
+                        <div class="ibox-content">
+                            
+                            <table class="table table-hover table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Room</th>
+                                        <th>Description</th>
+                                        <th>Devices</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% var i = 1 %>
+                                    <% rooms.forEach(function(room) { %>
+                                        <tr>
+                                            <td> <%= i %> </td>
+                                            <td> <%= room.location_name %> </td>
+                                            <td> <%= room.description %> </td>
+                                            <td> <%= room.children.length %> sublocation </td>
+                                        </tr>
+                                        <% i++ %>
+                                    <% }); %>
+
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <%- include('./partials/footer') %>
+            </div>
+
+        </div>
+
+        <!-- Mainly scripts -->
+        <script src="/js/jquery-3.1.1.min.js"></script>
+        <script src="/js/bootstrap.min.js"></script>
+        <script src="/js/plugins/metisMenu/jquery.metisMenu.js"></script>
+        <script src="/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+
+        <!-- Custom and plugin javascript -->
+        <script src="/js/inspinia.js"></script>
+        <script src="/js/plugins/pace/pace.min.js"></script>
+
+
+    </body>
+</html>
