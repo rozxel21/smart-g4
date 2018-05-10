@@ -26,6 +26,22 @@
 
                 <%- include('./partials/content-header') %>
 
+                <div class="row wrapper border-bottom white-bg page-heading">
+                    <div class="col-sm-4">
+                        <h2>Rooms</h2>
+                        <ol class="breadcrumb">
+                            <li>
+                                <a href="/">Home</a>
+                            </li>
+                            <li class="active">
+                                <strong>Rooms</strong>
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="col-sm-8">
+                    </div>
+                </div>
+
                 <div class="wrapper wrapper-content">
                     <div class="ibox float-e-margins">
                         <div class="ibox-title">
@@ -49,7 +65,7 @@
                                             <td> <%= i %> </td>
                                             <td> <%= room.location_name %> </td>
                                             <td> <%= room.description %> </td>
-                                            <td> <%= room.children.length %> sublocation </td>
+                                            <td> <a href="/rooms/<%= room.id %>/show" > <%= room.children.length %> units </a> </td>
                                         </tr>
                                         <% i++ %>
                                     <% }); %>

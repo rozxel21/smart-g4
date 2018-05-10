@@ -22,13 +22,13 @@
 				<div class="col-md-6">
 					<div class="wrap-box">
 						<h1>Smart G4</h1>
-						<form class="form">
+						<form id="login" class="form" action="/login" method="POST">
 							<div class="form-group">
-								<input class="form-control" type="email" placeholder="Email">
-								<input class="form-control" type="password" placeholder="Password">
+								<input class="form-control" name="username" type="text" placeholder="Username">
+								<input class="form-control" name="password" type="password" placeholder="Password">
 							</div>
 							<div class="form-group">
-								<button class="login-btn">LOGIN</button>
+								<button type="submit" class="login-btn">LOGIN</button>
 							</div>
 						</form>
 						<div>
@@ -42,3 +42,43 @@
 		</div> <!-- end container -->
 	</body> <!-- end body -->
 </html>
+
+<script src="/js/jquery-3.1.1.min.js"></script>
+
+<script type="text/javascript">
+	console.log('<%= queryString.redirect_uri %>')
+
+	$('#login').submit(function (event) {
+		event.preventDefault();
+
+		let form = $('#login');
+		let username = $('input[name=username]').val();
+		let password = $('input[name=password]').val();
+
+		$.ajax({
+			url: form.prop('action'),
+			type: 'POST',
+			dataType: 'JSON',
+			data: {
+				username: username,
+				password: password,
+				client: '<%= queryString.client_id %>'
+			},
+			success: function (data){
+				if(data.status){ 
+					let url = "<%= queryString.redirect_uri %>";
+					url += "?code=" + data.authCode;
+					url += "&state=" + "<%= queryString.state %>";
+					console.log(url);
+					window.location.href = url;
+				}else{
+					alert(data.message);
+				}
+			},
+			error: function (err){
+				console.log(err);
+			}
+		});
+	});
+
+</script>

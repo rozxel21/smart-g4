@@ -24,7 +24,26 @@
 
             <div id="page-wrapper" class="gray-bg">
 
-                <%- include('./partials/content-header', page) %>
+                <%- include('./partials/content-header') %>
+
+                <div class="row wrapper border-bottom white-bg page-heading">
+                    <div class="col-sm-4">
+                        <h2>User</h2>
+                        <ol class="breadcrumb">
+                            <li>
+                                <a href="/">Home</a>
+                            </li>
+                            <li class="active">
+                                <strong>Users</strong>
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="col-sm-8">
+                        <div class="title-action">
+                            <a href="/users/new" class="btn btn-primary">Add User</a>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="wrapper wrapper-content">
                     <div class="ibox float-e-margins">
@@ -40,11 +59,56 @@
                                         <th>Username</th>
                                         <th>Password</th>
                                         <th>Room Assign</th>
+                                        <th>Date Created</th>
+                                        <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    
+                                    <% if(users.length > 0) { %>
+
+                                        <% var i = 1 %>
+                                        <% users.forEach(function(user) { %>
+                                            <tr>
+                                                <td> <%= i %> </td>
+                                                <td> <%= user.username %> </td>
+                                                <td> <%= user.password %> </td>
+                                                
+                                                <% if(user.room_assign == undefined || user.room_assign == "") { %>
+                                                    <td class="text-center"> Unassign </td>
+                                                <% } else { %>
+                                                    <td class="text-center"> <%= user.room_raw[0].location_name %> </td>
+                                                <% } %>  
+
+                                                <td> <%= user.created_at.toUTCString() %> </td>
+                                                
+                                                <% if(user.status) { %>
+                                                    <td class="bg-primary"> Active </td>
+                                                <% }else { %>
+                                                    <td class="bg-warning"> Not Active </td>
+                                                <% } %>
+
+                                                <td>
+                                                    <a href="/users/<%= user._id %>/edit" 
+                                                        class="btn btn-sm btn-default">
+                                                        <i class="fa fa-edit"> </i> Edit
+                                                    </a>
+                                                    <a href="/users/<%= user._id %>/delete"  
+                                                        class="btn btn-sm btn-default">
+                                                        <i class="fa fa-trash"> </i> Delete
+                                                    </a>
+                                                </td>
+
+                                            </tr>
+                                            <% i++ %>
+                                        <% }); %>
+                                    <% }else { %>
+                                        <tr>
+                                            <td class="text-center" colspan="8">
+                                                No Users...
+                                            </td>
+                                        </tr>
+                                    <% } %>
                                 </tbody>
                             </table>
                         </div>

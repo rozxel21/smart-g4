@@ -37,7 +37,7 @@ a{
 	background-color: #0c83cb
 }
 
-input[type='email'], input[type='password']{
+input[type='text'], input[type='password']{
 	border-radius: 0;
 	padding: 25px;
 }
