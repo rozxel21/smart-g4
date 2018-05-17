@@ -5,7 +5,7 @@
 		<meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 		
-		<title>Smart G4</title>
+		<title>Smart G4 | Login</title>
 
 		<link href="/css/bootstrap.min.css" rel="stylesheet">
         <link href="/font-awesome/css/font-awesome.css" rel="stylesheet">
@@ -21,7 +21,7 @@
 				<div class="col-md-3"></div>
 				<div class="col-md-6">
 					<div class="wrap-box">
-						<h1>Smart G4</h1>
+						<h1>Smart G4 Admin</h1>
 						<form id="login" class="form" action="/auth/login" method="POST">
 							<div class="form-group">
 								<input class="form-control" name="username" type="text" placeholder="Username" required />
@@ -31,9 +31,6 @@
 								<button type="submit" class="login-btn">LOGIN</button>
 							</div>
 						</form>
-						<div>
-							<p>Forgot <a>Username / Password?</a></p>
-						</div>
 					</div>
 				</div>
 				<div class="col-md-3"></div>
@@ -45,5 +42,4 @@
 <script src="/js/jquery-3.1.1.min.js"></script>
 
 <script type="text/javascript">
-$('#login').submit(function (event) {event.preventDefault();let form = $('#login');let username = $('input[name=username]').val();let password = $('input[name=password]').val();$("#login :submit").html("Loading...");$("#login :submit").attr("disabled", true);$.ajax({url: form.prop('action'),type: 'POST',dataType: 'JSON',data: {username: username,password: password,client: '<%= queryString.client_id %>'},success: function (data){if(data.status){ let url = "<%= queryString.redirect_uri %>";url += "?code=" + data.authCode;url += "&state=" + "<%= queryString.state %>";window.location.href = url;}else{$("#login :submit").html('LOGIN');$("#login :submit").attr("disabled", false);alert(data.message);}},error: function (err){console.log(err);}});});
 </script>

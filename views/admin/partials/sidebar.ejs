@@ -15,14 +15,11 @@
             <li>
                 <a href="/"><i class="fa fa-pie-chart"></i> <span class="nav-label">Dashboard</span></a>
             </li>
-            <li class="active">
+            <li <% if (page === 'users') { %>class="active" <% } %> >
                 <a href="/users"><i class="fa fa-user"></i> <span class="nav-label">Users</span></a>
             </li>
-            <li>
+            <li <% if (page === 'rooms') { %>class="active" <% } %> >
                 <a href="/rooms"><i class="fa fa-home"></i> <span class="nav-label">Rooms</span></a>
-            </li>
-            <li>
-                <a href="/google-home-devices"><i class="fa fa-mobile-phone"></i> <span class="nav-label">Google Home Devices</span>  </a>
             </li>
         </ul>
     </div>
