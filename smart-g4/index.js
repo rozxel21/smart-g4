@@ -28,28 +28,26 @@ router.post('/', async (req, res, next) => {
 
 	try{
 		let user = await getUserByAccessToken(token);
-		
+		console.log(user);
+
 		for(let i = 0; i < inputs.length; i++) {
 			let input = inputs[i];
 			let intent = input.intent;
 			let data = null;
 			switch (intent) {
 				case 'action.devices.SYNC':
-					console.log('post /smart-g4 SYNC');
+					console.log('POST /smart-g4 SYNC');
 					data = await sync(user, token, requestId);
-					console.log(data);
 					console.log(data.payload.devices);
 					res.status(200).json(data);
 					break;
 				case 'action.devices.QUERY':
-          			console.log('post /smart-g4 QUERY');
-          			console.log(input.payload);
+          			console.log('POST /smart-g4 QUERY');
           			data = await query(user, token, requestId, input.payload.devices);
           			res.status(200).json(data);
           			break;
           		case 'action.devices.EXECUTE':
-          			console.log("===========================");
-          			console.log('post /smart-g4 EXECUTE');
+          			console.log('POST /smart-g4 EXECUTE');
           			data = await execute(user, token, requestId, input.payload);
           			res.status(200).json(data);
           			break;
@@ -78,9 +76,9 @@ let sync = async function (user, token, requestId) {
 				let g4modules = await getG4ModuleByNodeId(nodes.g4module_id);
 				
 				let type = null;
-				if (nodes.description == "Dimmer"){
+				if (nodes.node_type == "Dimmer"){
 					type = 'action.devices.types.LIGHT';
-				} else if (nodes.description == "HVAC"){
+				} else if (nodes.node_type == "HVAC"){
 					type = 'action.devices.types.AC_UNIT';
 				} else {
 					validateJSON = false;
@@ -105,7 +103,8 @@ let sync = async function (user, token, requestId) {
 					customData: {
 						deviceId: g4modules.device_id,
 						subnetId: g4modules.subnet_id,
-						channelId: nodes.node_no
+						channelId: nodes.node_no,
+						type: nodes.node_type
 					}
 				}
 
@@ -132,7 +131,7 @@ let query = async function (user, token, requestId, devices) {
 	let deviceStatus = {};
 	for (let i = 0; i < devices.length; i++){
 		let device = await getDeviceById(parseInt(devices[i].id));
-		if (device.description == 'Dimmer'){
+		if (device.node_type == 'Dimmer'){
 			let id = String(device.id);
 
 			if (device.state > 0){	
@@ -178,19 +177,23 @@ let execute = async function (user, token, requestId, payload){
 		switch(command[0].command){
 			case 'action.devices.commands.OnOff':
 				console.log(devices[i]);
-				var value = 100;
-				if(!command[0].params.on){
-					value = 0;
-				}
-				var success = await sendCommandLights(devices[i].customData, value);
-				if(success){
-					successId.push(devices[i].id);
-					state = {
-						on: true,
-						online: true
+				if(devices[i].customData.type == "Dimmer"){
+					var value = 100;
+					if(!command[0].params.on){
+						value = 0;
 					}
-				}else{
-					unSuccessId.push(devices[i].id);
+					var success = await sendCommandLights(devices[i].customData, value);
+					if(success){
+						successId.push(devices[i].id);
+						state = {
+							on: true,
+							online: true
+						}
+					}else{
+						unSuccessId.push(devices[i].id);
+					}
+				}else if(devices[i].customData.type == "HVAC"){
+					
 				}
 				break;
 			case 'action.devices.commands.BrightnessAbsolute':
@@ -245,7 +248,7 @@ let sendCommandLights = (data, value) => {
 	        if(msg){
 	        	let arr = Array.prototype.slice.call(msg, 0);
 		        console.log('OPCODE', arr[21], arr[22]);
-		        if (arr[21] == 0 && arr[22] == 50){
+		        if (arr[21] == 0 && arr[22] == 49){
 		        	console.log('SUCCESS', data);
 		        	resolve(true);
 		        	socket.close();
@@ -253,7 +256,7 @@ let sendCommandLights = (data, value) => {
 		        	ctr++;
 		        }
 
-		        if(ctr >= 10){
+		        if(ctr >= 4){
 		        	console.log('Fail', ctr);
 		        	resolve(false);
 		        	socket.close();
@@ -309,12 +312,13 @@ let getDeviceTraits = function (type){
 
 let getDeviceById = (id) => {
 	return new Promise((resolve, reject) => {
-		let query = 'SELECT locations.id, nodes.description, nodes.state FROM locations ';
+		let query = 'SELECT locations.id, nodes.description, nodes.node_type, nodes.state FROM locations ';
 			query += 'JOIN nodes ON locations.node_id = nodes.id ';
-			query += 'WHERE locations.id = ?';
+			query += 'WHERE locations.id = ? AND nodes.node_type != "NULL"';
 	
 		sql.query(query, [id], function (error, results, fields) {
 			if (error) reject(error);
+			console.log(results);
 	  		 resolve(results[0]);
 		});
 	});

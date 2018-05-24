@@ -13,6 +13,7 @@
 
         <link href="/css/animate.css" rel="stylesheet">
         <link href="/css/style.css" rel="stylesheet">
+
         <script src="/js/jquery-3.1.1.min.js"></script>
 
     </head>
@@ -21,21 +22,24 @@
 
         <div id="wrapper">
             
-            <%- include('./partials/sidebar') %>
+            <%- include('../partials/sidebar', page) %>
 
             <div id="page-wrapper" class="gray-bg">
 
-                <%- include('./partials/content-header') %>
+                <%- include('../partials/content-header') %>
 
                 <div class="row wrapper border-bottom white-bg page-heading">
                     <div class="col-sm-4">
-                        <h2>Rooms</h2>
+                        <h2>Room</h2>
                         <ol class="breadcrumb">
                             <li>
                                 <a href="/">Home</a>
                             </li>
+                            <li>
+                                <a href='/rooms'>Rooms</a>
+                            </li>
                             <li class="active">
-                                <strong>Rooms</strong>
+                                <strong>Devices</strong>
                             </li>
                         </ol>
                     </div>
@@ -46,7 +50,7 @@
                 <div class="wrapper wrapper-content">
                     <div class="ibox float-e-margins">
                         <div class="ibox-title">
-                            <h5>Rooms</h5>
+                            <h5>Devices</h5>
                         </div>
                         <div class="ibox-content">
                             
@@ -54,19 +58,33 @@
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Room</th>
+                                        <th>Name</th>
                                         <th>Description</th>
-                                        <th>Devices</th>
+                                        <th>Type</th>
+                                        <th>Model</th>
+                                        <th>Remarks</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <% var i = 1 %>
-                                    <% rooms.forEach(function(room) { %>
+                                    <% devices.forEach(function(device) { %>
                                         <tr>
                                             <td> <%= i %> </td>
-                                            <td> <%= room.location_name %> </td>
-                                            <td> <%= room.description %> </td>
-                                            <td> <a href="/rooms/<%= room.id %>/show" > <%= room.children.length %> units </a> </td>
+                                            <td> <%= device.name %> </td>
+                                            <% if(device.g4module != null) { %>
+                                                <td><%= device.node.description %></td>
+                                                <td><%= device.node.node_type %></td>
+                                                <td><%= device.g4module.device_model %></td>
+                                                <td><%= device.g4module.remark %></td>
+                                                <td><%= device.node.state %></td>
+                                            <% } else { %>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                            <% } %>
                                         </tr>
                                         <% i++ %>
                                     <% }); %>
@@ -77,11 +95,11 @@
                     </div>
                 </div>
 
-                <%- include('./partials/footer') %>
+                <%- include('../partials/footer') %>
             </div>
 
         </div>
 
-        <%- include('./partials/script') %>
+        <%- include('../partials/script') %>
     </body>
 </html>

@@ -22,7 +22,10 @@
 				<div class="col-md-6">
 					<div class="wrap-box">
 						<h1>Smart G4 Admin</h1>
-						<form id="login" class="form" action="/auth/login" method="POST">
+						<% if (message.length > 0) { %>
+							<div class="alert alert-danger"><%= message %></div>
+						<% } %>
+						<form id="login" class="form" action="/login" method="POST">
 							<div class="form-group">
 								<input class="form-control" name="username" type="text" placeholder="Username" required />
 								<input class="form-control" name="password" type="password" placeholder="Password" required />
@@ -40,6 +43,30 @@
 </html>
 
 <script src="/js/jquery-3.1.1.min.js"></script>
-
 <script type="text/javascript">
+	/*$('#login').submit(function(event) {
+	    //event.preventDefault();
+
+	    let form = $('#login');
+	    let username = $('input[name=username]').val();
+	    let password = $('input[name=password]').val();
+	    
+	    $("#login :submit").html("Loading...");
+	    $("#login :submit").attr("disabled", true);
+	    
+	    $.ajax({
+	        url: form.prop('action'),
+	        type: 'POST',
+	        dataType: 'JSON',
+	        data: {
+	            username: username,
+	            password: password,
+	        },
+	        error: function(err) {
+	        	console.log(err);
+	        	$("#login :submit").html('LOGIN');
+	            $("#login :submit").attr("disabled", false);
+	        }
+	    });
+	});*/
 </script>

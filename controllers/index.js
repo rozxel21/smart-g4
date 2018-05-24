@@ -1,24 +1,44 @@
 const express = require('express');
 const router = express.Router();
-const bodyParser = require('body-parser');
 const util = require('util')
 const sql = require('../db/mysql-db.js');
 const https = require('https');
 const base32 = require('base-32').default;
+const guid = require('uuid/v1');
+const bcrypt = require('bcrypt');
+
+const passport = require('passport');
 
 const User = require('../models/user.js');
 const AuthCode = require('../models/auth-code.js');
+const SysAdmin = require('../models/sys-admin.js');
 
-router.use(bodyParser.urlencoded({extended: true}));
-router.use(bodyParser.json({type: 'application/json'}));
-
+/******************
+*
+*	GET
+*
+*******************/
 
 router.get('/login', function (req, res){
+	
+	console.log('GET /login');
+	
+	if(req.isAuthenticated()) res.redirect('/users');
 
-	res.render('admin/login');
+	res.render('admin/login', { 
+		message: req.flash('loginMessage')
+	});
 });
 
-router.get('/users', async (req, res, next) => {
+router.get('/logout', function(req, res){
+	console.log('GET /logout');
+
+	req.logout();
+  	res.redirect('/login');
+});
+
+router.get('/users', isLoggedIn, async (req, res, next) => {
+	console.log('GET /users');
 
 	try{
 		let users = await getUsers();
@@ -38,7 +58,8 @@ router.get('/users', async (req, res, next) => {
 	}
 });
 
-router.get('/users/new', async (req, res, next) => {
+router.get('/users/new', isLoggedIn, async (req, res, next) => {
+	console.log('GET /users/new');
 
 	try{
 		let rooms = await getRooms();
@@ -51,19 +72,27 @@ router.get('/users/new', async (req, res, next) => {
 	}
 });
 
-router.post('/users/save', function (req, res) {
+router.get('/users/:id/setting', isLoggedIn, async (req, res) => {
+	let id = req.params.id;
 
-	let newUser = new User;
-	newUser.username = req.body.username;
-	newUser.password = base32.encode(req.body.password);
-	newUser.room_assign = req.body.room;
-	newUser.token = generateToken();
-	newUser.save();
+	console.log('GET /users/' + id + '/setting');
 
-	res.json(newUser);
+	try {
+		let user = await getUserById(id);
+		let rooms = await getRooms();
+		res.render('admin/user/setting', {
+			page: 'users',
+			user: user,
+			rooms: rooms
+		});
+	} catch(error){
+		console.log(error);
+	}
 });
 
-router.get('/rooms', async (req, res, next) => {
+router.get('/rooms', isLoggedIn, async (req, res, next) => {
+	console.log('GET /rooms');
+
 	try{
 		let roomsRaw = await getRooms();
 	
@@ -96,10 +125,13 @@ router.get('/rooms', async (req, res, next) => {
 	}
 });
 
-router.get('/rooms/:id/show', async (req, res, next) => {
+router.get('/rooms/:id/show', isLoggedIn, async (req, res, next) => {
+
+	let id = req.params.id;
+	console.log('GET /rooms/' + id + '/show');
 
 	try{
-		let devicesRaw = await getDevicesByRoomId(req.params.id);
+		let devicesRaw = await getDevicesByRoomId(id);
 		let devices = new Array();
 
 		//console.log(devices);
@@ -113,7 +145,7 @@ router.get('/rooms/:id/show', async (req, res, next) => {
 
 			let temp = {
 				id : devicesRaw[i].id,
-				location_name : devicesRaw[i].location_name,
+				name : devicesRaw[i].location_name,
 				parent_location : devicesRaw[i].parent_location,
 				location_type : devicesRaw[i].location_type,
 				created_at : devicesRaw[i].created_at,
@@ -122,21 +154,121 @@ router.get('/rooms/:id/show', async (req, res, next) => {
 				g4module : g4modules
 			}
 
-			//console.log(temp);
-
+			//console.log(temp.node);
 			devices.push(temp);
 		}
 
-		res.json(devices);
+		res.render('admin/room/show', {
+			page: 'rooms',
+			devices: devices
+		});
+		
 	}catch(error){
 		console.log(error);
 	}
 });
 
+/******************
+*
+*	POST
+*
+*******************/
+
+router.post('/login', passport.authenticate('local-login', {
+        successRedirect : '/users', // redirect to the secure profile section
+        failureRedirect : '/login', // redirect back to the signup page if there is an error
+        failureFlash : true // allow flash messages
+}));
+
+router.post('/users/save', isLoggedIn, function (req, res) {
+	console.log('POST /users/save');
+
+	let newUser = new User;
+	newUser.username = req.body.username;
+	newUser.password = base32.encode(req.body.password);
+	newUser.room_assign = req.body.room;
+	newUser.token = generateToken();
+	newUser.save();
+
+	res.json(newUser);
+});
+
+/******************
+*
+*	PUT
+*
+*******************/
+
+router.put('/users/:id/update', isLoggedIn, function (req, res){
+	let id = req.params.id;
+
+	console.log('PUT /user/' + id + '/update');
+
+	User.findById(id, function(err, user){
+		if(err) res.status(500);
+
+		user.room_assign = req.body.room;
+		user.status = req.body.status;
+		user.updated_at = Date.now();
+		user.save(function (err, result){
+			if(err) res.status(500);
+			res.json({status: true});
+		});		
+	});
+});
+
+router.put('/users/:id/change-password', isLoggedIn, function (req, res){
+	let id = req.params.id;
+
+	console.log('PUT /user/' + id + '/change-password');
+
+	User.findById(id, function(err, user){
+		if(err) res.status(500);
+
+		user.password = base32.encode(req.body.password);
+		user.updated_at = Date.now();
+		user.save();	
+		res.json({status: true});	
+	});
+});
+
+/******************
+*
+*	DELETE
+*
+*******************/
+
+router.delete('/users/:id/delete', isLoggedIn, function (req, res) {
+	let id = req.params.id;
+
+	console.log('DELETE /user/' + id + '/delete');
+
+	User.deleteOne({'_id': id}, function(err) {
+		if(err) res.status(500);
+		res.status(200).json({status: true});
+	});
+});
+
+
+/******************
+*
+*	FUNCTIONS
+*
+*******************/
+
+let getUserById = (id) => {
+	return new Promise((resolve, reject) => {
+		User.findById(id, function(err, res){
+			if(err) reject(err);
+			resolve(res);
+		});
+	});
+}
+
 let generateToken = function (){
 	return {
-		access_token: codeGenerate(),
-		refresh_token: codeGenerate()
+		access_token: guid(),
+		refresh_token: guid()
 	};
 }
 
@@ -223,8 +355,14 @@ let getG4ModuleByNodeId = (id) => {
 	});
 }
 
-let codeGenerate = function(){
-	return Math.floor(Math.random() * 10000000000000000000000000000000000000000).toString(36);
+// route middleware to make sure
+function isLoggedIn(req, res, next) {
+
+	if (req.isAuthenticated())
+		return next();
+
+	// if they aren't redirect them to the home page
+	res.redirect('/login');
 }
 
 module.exports = router;

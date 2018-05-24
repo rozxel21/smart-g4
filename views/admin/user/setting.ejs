@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>Smart Hotel | Admin</title>
+
+        <link href="/css/bootstrap.min.css" rel="stylesheet">
+        <link href="/font-awesome/css/font-awesome.css" rel="stylesheet">
+
+        <link href="/css/animate.css" rel="stylesheet">
+        <link href="/css/style.css" rel="stylesheet">
+
+        <script src="/js/jquery-3.1.1.min.js"></script>
+
+    </head>
+
+    <body class="">
+
+        <div id="wrapper">
+            
+            <%- include('../partials/sidebar', page) %>
+
+            <div id="page-wrapper" class="gray-bg">
+
+                <%- include('../partials/content-header') %>
+
+                <div class="row wrapper border-bottom white-bg page-heading">
+                    <div class="col-sm-4">
+                        <h2>User Settings</h2>
+                        <ol class="breadcrumb">
+                            <li>
+                                <a href="/">Home</a>
+                            </li>
+                            <li>
+                                <a href='/users'>Users</a>
+                            </li>
+                            <li class="active">
+                                <strong>Settings</strong>
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="col-sm-8">
+                    </div>
+                </div>
+
+                <div class="wrapper wrapper-content">
+                    <div class="ibox float-e-margins">
+                        <div class="ibox-title">
+                            <h5>Edit User</h5>
+                        </div>
+                        <div class="ibox-content">
+                            <div id='validation-message'></div>
+                            <form id="user-edit-form" action="/users/<%= user.id %>/update" method="PUT" class="form-horizontal">
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Username</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" name="username" value="<%= user.username %>" class="form-control" minlength="5" disabled /> 
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Assign Room</label>
+                                    <div class="col-sm-10">
+                                        <select name="room" class="form-control">
+                                            <option value=""> Unassign </option>
+                                            <% rooms.forEach(function(room) { %>
+                                                <option value="<%= room.id %>"> <%= room.location_name %></option>
+                                             <% }); %>
+                                        </select>
+                                        <script type="text/javascript">
+                                            $('select[name=room]').val('<%= user.room_assign %>');
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Status</label>
+                                    <div class="col-sm-10">
+                                        <select name="status" class="form-control">
+                                            <option value="true">Activate</option>
+                                            <option value="false">Deactivate</option>
+                                        </select>
+                                         <script type="text/javascript">
+                                            $('select[name=status]').val('<%= user.status %>');
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-10">
+                                        <button class="btn btn-primary" type="submit"><i class="fa fa-check"></i>&nbsp;Update</button>
+                                    </div>
+                                </div>
+                            </form> 
+                        </div>
+                    </div>
+
+                    <div class="ibox float-e-margins">
+                        <div class="ibox-title">
+                            <h5>Change Password</h5>
+                        </div>
+                        <div class="ibox-content">
+                            <div id='validation-message'></div>
+                            <form id="user-change-password-form" action="/users/<%= user.id %>/change-password" method="PUT" class="form-horizontal">
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Username</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" name="username" value="<%= user.username %>" class="form-control" disabled /> 
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">New Password</label>
+                                    <div class="col-sm-10">
+                                        <input type="password" name="password" class="form-control" minlength="5" required />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Confirm Password</label>
+                                    <div class="col-sm-10">
+                                        <input type="password" name="confirm-password" class="form-control" minlength="5" required />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-10">
+                                        <button class="btn btn-primary" type="submit"><i class="fa fa-check"></i>&nbsp;Change Password</button>
+                                    </div>
+                                </div>
+                            </form> 
+                        </div>
+                    </div>
+                </div>
+
+                <%- include('../partials/footer') %>
+            </div>
+
+        </div>
+
+        <%- include('../partials/script') %>
+
+        <script type="text/javascript">
+            
+            $('#user-edit-form').submit(function(event){
+                event.preventDefault();
+
+                $("#user-edit-form :submit").html("Loading...");
+                $("#user-edit-form :submit").attr("disabled", true);
+
+                let form = $('#user-edit-form');
+                let room = $('select[name=room]').val();
+                let status = $('select[name=status]').val();
+
+                $.ajax({
+                    url: form.prop('action'),
+                    type: 'PUT',
+                    dataType: 'JSON',
+                    data: {
+                        room: room,
+                        status: status
+                    },
+                    success: function (data){
+                        window.location.href = '/users';
+                    },
+                    error: function (err){
+                        alert('Something went wrong');
+                        $("#user-edit-form :submit").html("<i class='fa fa-check'></i> Update");
+                        $("#user-edit-form :submit").attr("disabled", false);
+                    }
+                });
+            });
+
+            $('#user-change-password-form').submit(function(event){
+                event.preventDefault();
+
+                $("#user-change-password-form :submit").html("Loading...");
+                $("#user-change-password-form :submit").attr("disabled", true);
+
+                let form = $('#user-change-password-form');
+                let password = $('input[name=password]').val();
+                let confirmPassword = $('input[name=confirm-password]').val();
+                
+                if(password == confirmPassword){
+                    $.ajax({
+                        url: form.prop('action'),
+                        type: 'PUT',
+                        dataType: 'JSON',
+                        data: {
+                            password: password,
+                        },
+                        success: function (data){
+                            window.location.href = '/users';
+                        },
+                        error: function (err){
+                            alert('Something went wrong');
+                            $("#user-change-password-form :submit").html("<i class='fa fa-check'></i> Change Password");
+                            $("#user-change-password-form :submit").attr("disabled", false);
+                        }
+                    });
+                }else{
+                    alert('Password Mismatch');
+                    $("#user-change-password-form :submit").html("<i class='fa fa-check'></i> Change Password");
+                    $("#user-change-password-form :submit").attr("disabled", false);
+                }
+            });
+
+        </script>
+
+    </body>
+</html>

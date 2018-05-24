@@ -6,16 +6,13 @@ const util = require('util')
 const sql = require('../db/mysql-db.js');
 const https = require('https');
 const base32 = require('base-32').default;
+const guid = require('uuid/v1');
 
 const User = require('../models/user.js');
 const AuthCode = require('../models/auth-code.js');
 
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(bodyParser.json({type: 'application/json'}));
-
-router.get('/', function (req, res) {
-	res.json({status: 200});
-});
 
 router.get('/oauth', function (req, res){
 	console.log(req.query);
@@ -30,7 +27,7 @@ router.get('/oauth', function (req, res){
 });
 
 router.get('/login', function (req, res){
-	console.log("=======================================================");
+	console.log("GET /auth/login");
 	console.log(req.query);
 
 	res.render('login', {
@@ -48,7 +45,6 @@ router.post('/login', async (req, res, next) => {
 		}else{
 			//console.log(req.session);
 			let authCode = generateAuthCode(user.id, req.body.client);
-			req.session.user = user;
 			res.json({status: true, authCode: authCode});
 		}
 		
@@ -58,8 +54,7 @@ router.post('/login', async (req, res, next) => {
 });
 
 router.all('/token', async (req, res, next) => {
-	console.log('==============================');
-	console.log('token!');
+	console.log('/token!');
 
 	let client_id = req.query.client_id ? req.query.client_id : req.body.client_id;
     let client_secret = req.query.client_secret ? req.query.client_secret : req.body.client_secret;
@@ -104,7 +99,7 @@ router.all('/token', async (req, res, next) => {
 });
 
 let generateAuthCode = function (user_id, client_id) {
-	let authCode = Math.floor(Math.random() * 10000000000000000000000000000000000000000).toString(36);
+	let authCode = guid();
 	
 	let newAuthCode = new AuthCode;
 	newAuthCode.authcode = authCode;

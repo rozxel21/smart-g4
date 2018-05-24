@@ -72,10 +72,6 @@ CrcTool.getTable = function(position){
 		return crcTable[position];
 }
 
-CrcTool.test = function(){
-	return "Axel is Here";
-}
-
 CrcTool.packCRC = function(packetArray){
 	var newPacketBytes = new Array();
 
@@ -84,8 +80,7 @@ CrcTool.packCRC = function(packetArray){
 
 	var byte = 0;
 	var ctr = packetArray.length;
-	//console.log('ctr total: ' + ctr);
-	console.log('minus 2: ' + ctr);
+
 	while(ctr > 0){
 		byte = (crc >> 8) & 0xff;
 		crc  = (crc << 8) & 0xffff;

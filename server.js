@@ -5,17 +5,28 @@ const mongodb = require('./db/mongo-db.js');
 const controller = require('./controllers');
 const auth = require('./controllers/auth.js');
 const smartG4 = require('./smart-g4');
-const session = require('express-session');
+const passport = require('./config/passport-config.js');
 
-app.use(session({
-	genid: function (req) {
-		return Math.floor(Math.random() * 10000000000000000000000000000000000000000).toString(36);
-	},
-	secret: 'jumpman23',
-	resave: false,
-	saveUninitialized: true,
-	cookie: {secure: false}
-}));
+const guid = require('uuid/v1');
+const bodyParser = require('body-parser');
+
+
+
+/*const fs = require('fs');
+const http = require('http');
+const https = require('https');
+
+
+var options = {
+    key: fs.readFileSync('./privatekey.pem'),
+    cert: fs.readFileSync('./certificate.pem')
+};
+*/
+
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json({type: 'application/json'}));
+
+app.use(passport);
 
 // View 
 app.set('view engine', 'ejs');
@@ -29,6 +40,14 @@ app.use('/smart-g4', smartG4);
 const testApi = require('./test-api');
 app.use('/test-api', testApi);
 
+  app.use(function(req, res) {
+      res.status(400);
+     res.render('404');
+  });
+
+/*https.createServer(options, app).listen(3001, function(){
+  console.log("Express server listening on port " + 3001);
+});*/
 
 app.listen(3001, function() {
 	console.log('Listening on port 3001...');

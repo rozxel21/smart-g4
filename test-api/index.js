@@ -9,8 +9,18 @@ const base32 = require('base-32').default;
 const User = require('../models/user.js');
 const AuthCode = require('../models/auth-code.js');
 
+const SysAdmin = require('../models/sys-admin.js');
+
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(bodyParser.json({type: 'application/json'}));
+
+const bcrypt = require('bcrypt');
+
+router.get('/password', function (req, res){
+	bcrypt.hash('icanbe23D', 10, function(err, hash){
+		res.json({password: hash});
+	});
+});
 
 router.get('/', function (req, res){
 	let query = "SELECT DISTINCT l2.* FROM locations AS l1 ";
