@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const util = require('util')
 const sql = require('../db/mysql-db.js');
 const https = require('https');
+const HashMap = require('hashmap');
 
 const User = require('../models/user.js');
 const AuthCode = require('../models/auth-code.js');
@@ -15,6 +16,22 @@ const ip = require('ip');
 
 const HOST = '210.16.15.255';
 const PORT = 6000;
+
+const AC_COMMAND_TYPE_ON_OFF = 3;
+const AC_COMMAND_TYPE_COOL_TEMP = 4;
+const AC_COMMAND_TYPE_FAN_SPEED = 5;
+const AC_COMMAND_TYPE_AC_MODE = 6; 
+const AC_COMMAND_TYPE_HEAT_TEMP = 7;
+const AC_COMMAND_TYPE_AUTO_TEMP = 8;
+
+const AC_FAN_SPEED_AUTO = 0;
+const AC_FAN_SPEED_HIGH = 1;
+const AC_FAN_SPEED_MID = 2;
+const AC_FAN_SPEED_LOW = 3;
+
+const AC_MODE_COOL = 0;
+const AC_MODE_HEAT = 1;
+const AC_MODE_FAN = 2;
 
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(bodyParser.json({type: 'application/json'}));
@@ -28,38 +45,49 @@ router.post('/', async (req, res, next) => {
 
 	try{
 		let user = await getUserByAccessToken(token);
-		console.log(user);
-
-		for(let i = 0; i < inputs.length; i++) {
-			let input = inputs[i];
-			let intent = input.intent;
-			let data = null;
-			switch (intent) {
-				case 'action.devices.SYNC':
-					console.log('POST /smart-g4 SYNC');
-					data = await sync(user, token, requestId);
-					console.log(data.payload.devices);
-					res.status(200).json(data);
-					break;
-				case 'action.devices.QUERY':
-          			console.log('POST /smart-g4 QUERY');
-          			data = await query(user, token, requestId, input.payload.devices);
-          			res.status(200).json(data);
-          			break;
-          		case 'action.devices.EXECUTE':
-          			console.log('POST /smart-g4 EXECUTE');
-          			data = await execute(user, token, requestId, input.payload);
-          			res.status(200).json(data);
-          			break;
+		
+		if(user == null){
+			console.log('empty user');
+			res.status(200).json({
+				requestId: requestId,
+				payload: {
+					errorCode: 'authFailure'
+				}
+			});
+		}else{
+			for(let i = 0; i < inputs.length; i++) {
+				let input = inputs[i];
+				let intent = input.intent;
+				let data = null;
+				switch (intent) {
+					case 'action.devices.SYNC':
+						console.log('POST /smart-g4 SYNC');
+						data = await sync(user, token, requestId);
+						console.log(data.payload.devices);
+						res.status(200).json(data);
+						break;
+					case 'action.devices.QUERY':
+	          			console.log('POST /smart-g4 QUERY');
+	          			data = await query(user, token, requestId, input.payload.devices);
+	          			res.status(200).json(data);
+	          			break;
+	          		case 'action.devices.EXECUTE':
+	          			console.log('POST /smart-g4 EXECUTE');
+	          			data = await execute(user, token, requestId, input.payload);
+	          			res.status(200).json(data);
+	          			break;
+				}
 			}
 		}
+
+		
 
 	}catch(err){
 		console.log(err);
 	}
 });
 
-
+// SYNC
 let sync = async function (user, token, requestId) {
 	try{
 		let devicesRaw = await getDevicesByRoomId(user.room_assign);
@@ -108,6 +136,13 @@ let sync = async function (user, token, requestId) {
 					}
 				}
 
+				if(nodes.node_type == "HVAC"){
+					temp.attributes = {
+						availableThermostatModes: "off,heat,cool,on",
+						thermostatTemperatureUnit: "C"
+					}
+				}
+
 				if(validateJSON){
 					devices.push(temp);
 				}
@@ -126,14 +161,15 @@ let sync = async function (user, token, requestId) {
 	}
 }
 
+// QUERY
 let query = async function (user, token, requestId, devices) {
 
 	let deviceStatus = {};
 	for (let i = 0; i < devices.length; i++){
 		let device = await getDeviceById(parseInt(devices[i].id));
-		if (device.node_type == 'Dimmer'){
-			let id = String(device.id);
+		let id = String(device.id);
 
+		if (device.node_type == 'Dimmer'){
 			if (device.state > 0){	
 				deviceStatus[id] = {
 					on: true,
@@ -144,6 +180,28 @@ let query = async function (user, token, requestId, devices) {
 				deviceStatus[id] = {
 					on: false,
 					online: true
+				}
+			}
+		} else if (device.node_type == 'HVAC'){
+			if(device.state != 0){
+				let map = new HashMap();
+				let stateParams = device.state.split(';');
+
+				for(let i = 0; i < stateParams.length; i++){
+					let stateType = stateParams[i].split(':');
+					map.set(stateType[0], stateType[1].toLowerCase());
+				}
+
+				deviceStatus[id] = {
+					online: true,
+					thermostatMode: map.get('mode'),
+					thermostatTemperatureSetpoint: parseFloat(map.get('ac')),
+					thermostatTemperatureAmbient: parseFloat(map.get('temp'))
+				}
+
+			} else {
+				deviceStatus[id] = {
+					online: false
 				}
 			}
 		}
@@ -157,9 +215,11 @@ let query = async function (user, token, requestId, devices) {
 	}
 
 	console.log('response', data);
+	console.log('devices', data.payload.devices);
 	return data;
 }
 
+// EXECUTE
 let execute = async function (user, token, requestId, payload){
 
 	let devices = payload.commands[0].devices;
@@ -193,7 +253,17 @@ let execute = async function (user, token, requestId, payload){
 						unSuccessId.push(devices[i].id);
 					}
 				}else if(devices[i].customData.type == "HVAC"){
-					
+					var value = (command[0].params.on == true ) ? 1 : 0;
+					var success = await sendCommandAC(devices[i].customData, AC_COMMAND_TYPE_ON_OFF, value);
+					if(success){
+						successId.push(devices[i].id);
+						state = {
+							on: true,
+							online: true
+						}
+					}else{
+						unSuccessId.push(devices[i].id);
+					}
 				}
 				break;
 			case 'action.devices.commands.BrightnessAbsolute':
@@ -202,6 +272,20 @@ let execute = async function (user, token, requestId, payload){
 					successId.push(devices[i].id)
 					state = {
 						brightness: command[0].params.brightness
+					}
+				}else{
+					unSuccessId.push(devices[i].id);
+				}
+				break;
+			case 'action.devices.commands.ThermostatTemperatureSetpoint':
+				console.log('setasdf');
+				var value = command[0].params.thermostatTemperatureSetpoint;
+				var success = await sendCommandAC(devices[i].customData, AC_COMMAND_TYPE_COOL_TEMP, value);
+				if(success){
+					successId.push(devices[i].id);
+					state = {
+						on: true,
+						online: true
 					}
 				}else{
 					unSuccessId.push(devices[i].id);
@@ -279,6 +363,46 @@ let sendCommandLights = (data, value) => {
 	});
 }
 
+let sendCommandAC = (data, commandType, value) => {
+	return new Promise((resolve, reject) => {
+		var socket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
+		socket.bind(PORT);
+
+		socket.on('listening', function(){
+	        socket.setBroadcast(true);
+	    });
+
+		var ctr = 0;
+	    socket.on("message", function (msg, rinfo) {
+	        let arr = Array.prototype.slice.call(msg, 0);
+	        console.log('OPCODE', arr[21], arr[22]);
+	        if (arr[21] == 227 && arr[22] == 216){
+	        	console.log('SUCCESS', data);
+	        	resolve(true);
+	        	socket.close();
+	        } else{
+	        	ctr++;
+	        }
+
+	        if(ctr >= 3){
+	        	console.log('Fail', ctr);
+	        	resolve(false);
+	        	socket.close();
+	        }
+	    });
+
+
+	    socket.on("error", function (err) {
+	    	console.log("server error:\n" + err.stack);
+	    	socket.close();
+	    });
+
+	    socket.send(getAcPackets(data, commandType, value), PORT, HOST, function(err, bytes){
+	    	console.log('\nUDP message sent to ' + HOST +':'+ PORT);
+	    });
+	});
+}
+
 let getPackets = function(data, value){
 	let ipAddress = ip.address().split('.');
     let smartCloud = [0x53, 0x4d, 0x41, 0x52, 0x54, 0x43, 0x4c, 0x4f, 0x55, 0x44, 170, 170];
@@ -290,14 +414,25 @@ let getPackets = function(data, value){
     let commandBuffer = new Buffer(commandDataPackets);
     return commandBuffer;
 }
-	
+
+let getAcPackets = function(data, commandType, value){
+	let ipAddress = ip.address().split('.');
+    let smartCloud = [0x53, 0x4d, 0x41, 0x52, 0x54, 0x43, 0x4c, 0x4f, 0x55, 0x44, 170, 170];
+    let headerPackets = ipAddress.concat(smartCloud);
+    console.log('headerPackets', headerPackets);
+    //	len origDevice deviceHigh deviceLow opcodeHi opcodeLow subnet deviceId commandType value
+    let commandPackets = [13, 1, 219, 19, 166, 227, 216, data.subnetId, data.deviceId, commandType, value];
+    let crc_data = crc.packCRC(commandPackets);
+    console.log('commandPackets', commandPackets);
+    let commandDataPackets = headerPackets.concat(commandPackets);
+    let commandBuffer = new Buffer(commandDataPackets);
+    return commandBuffer;
+}
 
 let getDeviceTraits = function (type){
 	if(type == "action.devices.types.LIGHT"){
 		return [
           "action.devices.traits.OnOff", "action.devices.traits.Brightness",
-          "action.devices.traits.ColorTemperature",
-          "action.devices.traits.ColorSpectrum"
         ];
 	} else if(type == "action.devices.types.AC_UNIT"){
 		return [

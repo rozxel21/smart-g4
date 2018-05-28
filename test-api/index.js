@@ -11,6 +11,9 @@ const AuthCode = require('../models/auth-code.js');
 
 const SysAdmin = require('../models/sys-admin.js');
 
+const HashMap = require('hashmap');
+const map = new HashMap();
+
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(bodyParser.json({type: 'application/json'}));
 
@@ -51,6 +54,64 @@ router.get('/2', function (req, res){
 	  if (error) throw(error);
 	  res.json(results);
 	});
+});
+
+router.get('/3', function (req, res){
+	let query = 'SELECT locations.id, nodes.description, nodes.node_type, nodes.state FROM locations ';
+		query += 'JOIN nodes ON locations.node_id = nodes.id ';
+		query += 'WHERE locations.id = 19 AND nodes.node_type != "NULL"';
+
+	sql.query(query, function (error, results, fields) {
+	  	if (error) throw(error);
+
+	  	results.forEach(function(result){
+	  		var tests = result.state.split(';');
+	  		console.log(tests);
+	  		tests.forEach(function(test){
+	  			var sample = test.split(':');
+	  			console.log(sample);
+	  			map.set(sample[0], sample[1]);
+	  		});
+	  	});
+
+	  	console.log(map.get('unit'));
+	  	console.log(map.get('temp'));
+	  	console.log(map.get('ac'));
+	  	console.log(map.get('speed'));
+	  	res.json(results);
+	});
+});
+
+router.get('/4', function(req, res){
+	let temp = {
+		id : 1,
+		type: 'action.devices.types.OUTLET',
+		name: {
+			defaultNames: [ 'room' ],
+			name: 'living',
+			nicknames: [ 'living' ]
+		},
+		willReportState: false,
+		deviceInfo: {
+			manufacturer: "Smart G4",
+			model: 'g4modules.device_model',
+			hwVersion: "",
+			swVersion: ""
+		},
+		customData: {
+			deviceId: 'g4modules.device_id',
+			subnetId: 'g4modules.subnet_id',
+			channelId: 'nodes.node_no',
+			type: 'nodes.node_type'
+		}
+	}
+
+	temp.attributes = {
+		availableThermostatModes: "Cool,Auto,Heat,Fan",
+		thermostatTemperatureUnit: "C"
+	}
+
+	res.json(temp);
 });
 
 module.exports = router;
