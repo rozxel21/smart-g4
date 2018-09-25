@@ -1,11 +1,11 @@
 const express = require('express');
 const app = express();
 
-const mongodb = require('./db/mongo-db.js');
+const mongodb = require('./db/mongo-db');
 const controller = require('./controllers');
-const auth = require('./controllers/auth.js');
+const auth = require('./controllers/auth');
 const smartG4 = require('./smart-g4');
-const passport = require('./config/passport-config.js');
+const passport = require('./config/passport-config');
 
 const guid = require('uuid/v1');
 const bodyParser = require('body-parser');
@@ -37,13 +37,13 @@ app.use(controller);
 app.use('/auth', auth);
 app.use('/smart-g4', smartG4);
 
-const testApi = require('./test-api');
+/*const testApi = require('./test-api');
 app.use('/test-api', testApi);
 
   app.use(function(req, res) {
       res.status(400);
      res.render('404');
-  });
+  });*/
 
 /*https.createServer(options, app).listen(3001, function(){
   console.log("Express server listening on port " + 3001);

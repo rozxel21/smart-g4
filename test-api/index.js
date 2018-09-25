@@ -20,7 +20,7 @@ router.use(bodyParser.json({type: 'application/json'}));
 const bcrypt = require('bcrypt');
 
 router.get('/password', function (req, res){
-	bcrypt.hash('icanbe23D', 10, function(err, hash){
+	bcrypt.hash('projectJarvis', 10, function(err, hash){
 		res.json({password: hash});
 	});
 });

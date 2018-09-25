@@ -15,11 +15,14 @@
             <li>
                 <a href="/"><i class="fa fa-pie-chart"></i> <span class="nav-label">Dashboard</span></a>
             </li>
+            <li <% if (page === 'hotels') { %>class="active" <% } %> >
+                <a href="/hotels"><i class="fa fa-hotel"></i> <span class="nav-label">Hotels</span></a>
+            </li>
+             <li <% if (page === 'rooms') { %>class="active" <% } %> >
+                <a href="/rooms"><i class="fa fa-home"></i> <span class="nav-label">Rooms</span></a>
+            </li>
             <li <% if (page === 'users') { %>class="active" <% } %> >
                 <a href="/users"><i class="fa fa-user"></i> <span class="nav-label">Users</span></a>
-            </li>
-            <li <% if (page === 'rooms') { %>class="active" <% } %> >
-                <a href="/rooms"><i class="fa fa-home"></i> <span class="nav-label">Rooms</span></a>
             </li>
         </ul>
     </div>

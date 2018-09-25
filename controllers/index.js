@@ -1,7 +1,7 @@
-const express = require('express');
+	const express = require('express');
 const router = express.Router();
 const util = require('util')
-const sql = require('../db/mysql-db.js');
+const sql = require('../db/mysql-db');
 const https = require('https');
 const base32 = require('base-32').default;
 const guid = require('uuid/v1');
@@ -9,9 +9,9 @@ const bcrypt = require('bcrypt');
 
 const passport = require('passport');
 
-const User = require('../models/user.js');
-const AuthCode = require('../models/auth-code.js');
-const SysAdmin = require('../models/sys-admin.js');
+const User = require('../models/user');
+const AuthCode = require('../models/auth-code');
+const SysAdmin = require('../models/sys-admin');
 
 /******************
 *
@@ -47,10 +47,14 @@ router.get('/users', isLoggedIn, async (req, res, next) => {
 			users[i].room_raw = room;
 			users[i].password = base32.decode(users[i].password);
 		}
-		//res.json(devices);
+
 		res.render('admin/user', {
 			page: 'users',
-			users: users
+			users: users,
+			message: {
+				status: req.flash('status'),
+				message: req.flash('message')
+			}
 		});
 	}catch (error){
 		console.log(error)
@@ -175,22 +179,35 @@ router.get('/rooms/:id/show', isLoggedIn, async (req, res, next) => {
 *******************/
 
 router.post('/login', passport.authenticate('local-login', {
-        successRedirect : '/users', // redirect to the secure profile section
-        failureRedirect : '/login', // redirect back to the signup page if there is an error
-        failureFlash : true // allow flash messages
-}));
+    failureRedirect : '/login', // redirect back to the signup page if there is an error
+    failureFlash : true // allow flash messages
+}), function(req, res){
+	res.redirect('/users');
+});
 
 router.post('/users/save', isLoggedIn, function (req, res) {
 	console.log('POST /users/save');
 
-	let newUser = new User;
-	newUser.username = req.body.username;
-	newUser.password = base32.encode(req.body.password);
-	newUser.room_assign = req.body.room;
-	newUser.token = generateToken();
-	newUser.save();
+	try{
+		let newUser = new User;
+		newUser.username = req.body.username;
+		newUser.password = base32.encode(req.body.password);
+		newUser.room_assign = req.body.room;
+		newUser.token = generateToken();
+		newUser.save(function(err, user){
+			if(err) res.status(500);
 
-	res.json(newUser);
+			req.flash('status', 'success');
+			req.flash('message', 'New User Successfully added.');
+
+			res.json(user);
+		});
+
+		
+	}catch(error){
+		console.log('error', error);
+		res.status(500);
+	}
 });
 
 /******************
@@ -212,6 +229,9 @@ router.put('/users/:id/update', isLoggedIn, function (req, res){
 		user.updated_at = Date.now();
 		user.save(function (err, result){
 			if(err) res.status(500);
+
+			req.flash('status', 'success');
+			req.flash('message', 'User Successfully Updated.');
 			res.json({status: true});
 		});		
 	});
@@ -227,7 +247,9 @@ router.put('/users/:id/change-password', isLoggedIn, function (req, res){
 
 		user.password = base32.encode(req.body.password);
 		user.updated_at = Date.now();
-		user.save();	
+		user.save();
+		req.flash('status', 'success');
+		req.flash('message', 'User Password Successfully Changed.');
 		res.json({status: true});	
 	});
 });
@@ -256,7 +278,7 @@ router.delete('/users/:id/delete', isLoggedIn, function (req, res) {
 *
 *******************/
 
-let getUserById = (id) => {
+let getUserById = function(id){
 	return new Promise((resolve, reject) => {
 		User.findById(id, function(err, res){
 			if(err) reject(err);
@@ -272,7 +294,7 @@ let generateToken = function (){
 	};
 }
 
-let getRoomById = (id) => {
+let getRoomById = function(id){
 	return new Promise((resolve, reject) => {
 		let query = "SELECT * FROM locations WHERE id = ?";
 		sql.query(query, [id], function (error, results, fields) {
@@ -282,7 +304,7 @@ let getRoomById = (id) => {
 	});
 };
 
-let getRooms = () => {
+let getRooms = function(){
 	let query = "SELECT DISTINCT l2.* FROM locations AS l1 ";
 		query += "LEFT JOIN locations AS l2 ON l2.id = l1.parent_location ";
 		query += "WHERE l1.location_type = 1 AND l1.parent_location != 'NULL'";
@@ -294,7 +316,7 @@ let getRooms = () => {
 	});
 };
 
-let getRoomByParentLocation = (id) => {
+let getRoomByParentLocation = function(id){
 	return new Promise((resolve, reject) => {
 		let query = "SELECT * FROM locations WHERE parent_location = ?";
 		sql.query(query, [id], function (error, results, fields) {
@@ -304,16 +326,16 @@ let getRoomByParentLocation = (id) => {
 	});
 };
 
-let getUsers = () => {
+let getUsers = function(){
 	return new Promise((resolve, reject) => {
 		User.find(function(err, res){
 			if(err) reject(error);
 			resolve(res);
-		});
+		}).sort('-created_at');
 	});
 };
 
-let getUserByAccessToken = (access_token) => {
+let getUserByAccessToken = function(access_token){
 	return new Promise((resolve, reject) => {
 		User.findOne({ 'token.access_token': access_token }, function(err, res){
 			if(err) reject("user not found!");
@@ -322,7 +344,7 @@ let getUserByAccessToken = (access_token) => {
 	});
 }
 
-let getDevicesByRoomId = (roomId) => {
+let getDevicesByRoomId = function(roomId){
 	return new Promise((resolve, reject) => {
 		let query = 'SELECT * FROM locations WHERE parent_location = ?';
 
@@ -333,7 +355,7 @@ let getDevicesByRoomId = (roomId) => {
 	});
 }
 
-let getNodeByDeviceId = (id) => {
+let getNodeByDeviceId = function(id){
 	return new Promise((resolve, reject) => {
 		let query = 'SELECT * FROM nodes WHERE id = ?';
 
@@ -344,7 +366,7 @@ let getNodeByDeviceId = (id) => {
 	});
 }
 
-let getG4ModuleByNodeId = (id) => {
+let getG4ModuleByNodeId = function(id){
 	return new Promise((resolve, reject) => {
 		let query = 'SELECT * FROM g4modules WHERE id = ?';
 

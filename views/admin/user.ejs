@@ -48,6 +48,14 @@
                 </div>
 
                 <div class="wrapper wrapper-content">
+
+                    <% if(message.status.length > 0) { %>
+                        <div class="alert alert-<%= message.status %> alert-dismissable">
+                            <button aria-hidden="true" data-dismiss="alert" class="close" type="button">×</button>
+                            <%= message.message %>
+                        </div>
+                    <% } %>
+
                     <div class="ibox float-e-margins">
                         <div class="ibox-title">
                             <h5>Users</h5>
@@ -84,7 +92,7 @@
                                                             <%= user.room_raw[0].location_name %>
                                                         </a>
                                                     </td>
-                                                <% } %>  
+                                                <% } %>
 
                                                 <td> <%= user.created_at.toUTCString() %> </td>
                                                 
@@ -128,7 +136,6 @@
 
         <%- include('./partials/script') %>
 
-        <script src="/js/plugins/sweetalert/sweetalert.min.js"></script>
         <script type="text/javascript">
             $(document).on("click", "#delete", function(e){
                 let id = $(this).data('delete');
