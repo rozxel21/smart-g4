@@ -10,8 +10,6 @@ const passport = require('./config/passport-config');
 const guid = require('uuid/v1');
 const bodyParser = require('body-parser');
 
-
-
 /*const fs = require('fs');
 const http = require('http');
 const https = require('https');
@@ -29,13 +27,16 @@ app.use(bodyParser.json({type: 'application/json'}));
 app.use(passport);
 
 // View 
+var engine = require('ejs-layout');
 app.set('view engine', 'ejs');
+app.engine('ejs', engine.__express);
+
 app.use(express.static(__dirname + '/public'));
 
 // Controller
-app.use(controller);
-app.use('/auth', auth);
-app.use('/smart-g4', smartG4);
+app.use(controller); // main
+app.use('/auth', auth);	// google oauth
+app.use('/smart-g4', smartG4); // google home endpoint 
 
 /*const testApi = require('./test-api');
 app.use('/test-api', testApi);

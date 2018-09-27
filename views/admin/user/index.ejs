@@ -1,0 +1,108 @@
+<%+ extend('admin/index') %>
+
+<%+ section('content') %>
+
+    <div class="row wrapper border-bottom white-bg page-heading">
+        <div class="col-sm-4">
+      
+
+            <h2>User</h2>
+            <ol class="breadcrumb">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li class="active">
+                    <strong>Users</strong>
+                </li>
+            </ol>
+        </div>
+        <div class="col-sm-8">
+            <div class="title-action">
+                <a href="/users/new" class="btn btn-primary">Add User</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="wrapper wrapper-content">
+
+        <% if(message.status.length > 0) { %>
+            <div class="alert alert-<%= message.status %> alert-dismissable">
+                <button aria-hidden="true" data-dismiss="alert" class="close" type="button">×</button>
+                <%= message.message %>
+            </div>
+        <% } %>
+
+        <div class="ibox float-e-margins">
+            <div class="ibox-title">
+                <h5>Users</h5>
+            </div>
+            <div class="ibox-content">
+                
+                <table class="table table-hover table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Username</th>
+                            <th>Password</th>
+                            <th>Room Assign</th>
+                            <th>Date Created</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if(users.length > 0) { %>
+
+                            <% var i = 1 %>
+                            <% users.forEach(function(user) { %>
+                                <tr id="<%= user.id %>">
+                                    <td> <%= i %> </td>
+                                    <td> <%= user.username %> </td>
+                                    <td> <%= user.password %> </td>
+                                    
+                                    <% if(user.room_assign == undefined || user.room_assign == "") { %>
+                                        <td class="text-center"> Unassign </td>
+                                    <% } else { %>
+                                        <td class="text-center"> 
+                                            <a href="/rooms/<%= user.room_raw[0].id %>/show">
+                                                <%= user.room_raw[0].location_name %>
+                                            </a>
+                                        </td>
+                                    <% } %>
+
+                                    <td> <%= user.created_at.toUTCString() %> </td>
+                                    
+                                    <% if(user.status) { %>
+                                        <td class="bg-primary"> Active </td>
+                                    <% }else { %>
+                                        <td class="bg-warning"> Not Active </td>
+                                    <% } %>
+
+                                    <td>
+                                        <a href="/users/<%= user._id %>/setting"  
+                                            class="btn btn-sm btn-default">
+                                            <i class="fa fa-cog"> </i> Settings
+                                        </a>
+                                        <button id="delete" data-delete="<%= user.id %>"
+                                            class="btn btn-sm btn-default">
+                                            <i class="fa fa-trash"> </i> Delete
+                                        </button>
+                                    </td>
+
+                                </tr>
+                                <% i++ %>
+                            <% }); %>
+                        <% }else { %>
+                            <tr>
+                                <td class="text-center" colspan="8">
+                                    No Users...
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<%+ endSection %>

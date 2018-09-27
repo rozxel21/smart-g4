@@ -25,15 +25,27 @@ router.get('/password', function (req, res){
 	});
 });
 
+
+
 router.get('/', function (req, res){
-	let query = "SELECT DISTINCT l2.* FROM locations AS l1 ";
-		query += "LEFT JOIN locations AS l2 ON l2.id = l1.parent_location ";
-		query += "WHERE l1.location_type = 1 AND l1.parent_location != 'NULL'";
-	
-		sql.query(query, function (error, results, fields) {
-		  if (error) throw(error);
-		  res.json(results);
+	try{
+		let newUser = new User;
+		newUser.username = req.body.username;
+		newUser.password = base32.encode(req.body.password);
+		newUser.room_assign = req.body.room;
+		newUser.token = fxn.generateToken();
+		newUser.save(function(err, user){
+			if(err) res.status(500);
+
+			req.flash('status', 'success');
+			req.flash('message', 'New User Successfully added.');
+
+			res.json(user);
 		});
+	}catch(error){
+		console.log('error', error);
+		res.status(500);
+	}
 });
 
 router.get('/1', function (req, res){

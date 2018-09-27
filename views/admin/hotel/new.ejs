@@ -1,15 +1,16 @@
 <%+ extend('admin/index') %>
 
 <%+ section('content') %>
+    
     <div class="row wrapper border-bottom white-bg page-heading">
         <div class="col-sm-4">
-            <h2>New User</h2>
+            <h2>New Hotel</h2>
             <ol class="breadcrumb">
                 <li>
                     <a href="/">Home</a>
                 </li>
                 <li>
-                    <a href='/users'>Users</a>
+                    <a href='/hotels'>Hotels</a>
                 </li>
                 <li class="active">
                     <strong>New</strong>
@@ -23,38 +24,27 @@
     <div class="wrapper wrapper-content">
         <div class="ibox float-e-margins">
             <div class="ibox-title">
-                <h5>New User</h5>
+                <h5>New Hotel</h5>
             </div>
             <div class="ibox-content">
                 <div id='validation-message'></div>
-                <form id="user-new-form" action="/users/save" method="POST" class="form-horizontal">
+                <form id="hotel-new-form" action="/hotels/save" method="POST" class="form-horizontal">
                     <div class="form-group">
-                        <label class="col-sm-2 control-label">Username</label>
+                        <label class="col-sm-2 control-label">Name</label>
                         <div class="col-sm-10">
-                            <input type="text" name="username" class="form-control" minlength="5" required /> 
+                            <input type="text" name="hotel-name" class="form-control" minlength="5" required /> 
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="col-sm-2 control-label">Password</label>
+                        <label class="col-sm-2 control-label">Abbreviation</label>
                         <div class="col-sm-10">
-                            <input type="password" name="password" class="form-control" minlength="5" required />
+                            <input type="text" name="hotel-abrr" class="form-control" minlength="2" required /> 
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="col-sm-2 control-label">Confirm Password</label>
+                        <label class="col-sm-2 control-label">Smart G4 Proxy Endpoint</label>
                         <div class="col-sm-10">
-                            <input type="password" name="confirm-password" class="form-control" minlength="5" required />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label">Assign Room</label>
-                        <div class="col-sm-10">
-                            <select name="room" class="form-control">
-                                <option value=""> Unassign </option>
-                                <% rooms.forEach(function(room) { %>
-                                    <option value="<%= room.id %>"> <%= room.location_name %></option>
-                                 <% }); %>
-                            </select>
+                            <input type="text" name="smart-g4-proxy-endpoint" class="form-control" minlength="5" required /> 
                         </div>
                     </div>
                     <div class="form-group">
@@ -66,5 +56,6 @@
                 </form> 
             </div>
         </div>
-    </div> 
+    </div>
+
 <%+ endSection %>

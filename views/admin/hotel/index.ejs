@@ -1,0 +1,96 @@
+<%+ extend('admin/index') %>
+
+<%+ section('content') %>
+	<div class="row wrapper border-bottom white-bg page-heading">
+	    <div class="col-sm-4">
+	        <h2>Hotels</h2>
+	        <ol class="breadcrumb">
+	            <li>
+	                <a href="/">Home</a>
+	            </li>
+	            <li class="active">
+	                <strong>Hotels</strong>
+	            </li>
+	        </ol>
+	    </div>
+	    <div class="col-sm-8">
+	        <div class="title-action">
+	            <a href="/hotels/new" class="btn btn-primary">Add Hotel</a>
+	        </div>
+	    </div>
+	</div>
+
+	<div class="wrapper wrapper-content">
+
+		<% if(message.status.length > 0) { %>
+            <div class="alert alert-<%= message.status %> alert-dismissable">
+                <button aria-hidden="true" data-dismiss="alert" class="close" type="button">×</button>
+                <%= message.message %>
+            </div>
+        <% } %>
+
+	    <div class="ibox float-e-margins">
+	        <div class="ibox-title">
+	            <h5>Hotels</h5>
+	        </div>
+	        <div class="ibox-content"> 
+	            <table class="table table-hover table-striped">
+	                <thead>
+	                    <tr>
+	                        <th>#</th>
+	                        <th>Name</th>
+	                        <th>Client ID</th>
+	                        <th>Endpoint</th>
+	                        <th>Date Created</th>
+	                        <th>Status</th>
+	                        <th>Actions</th>
+	                    </tr>
+	                </thead>
+	                <tbody>
+	                    <% if(hotels.length > 0) { %>
+
+                            <% var i = 1 %>
+                            <% hotels.forEach(function(hotel) { %>
+                                <tr id="<%= hotel.id %>">
+                                    <td> <%= i %> </td>
+                                    <td> <%= hotel.name %> </td>
+                                    <td> <%= hotel.client_id %> </td>
+                                    <td> <%= hotel.smart_g4_proxy_endpoint %> </td>
+                                    <td> <%= hotel.created_at.toUTCString() %> </td>
+                                    
+                                    <% if(hotel.status) { %>
+                                        <td class="bg-primary"> Active </td>
+                                    <% }else { %>
+                                        <td class="bg-warning"> Not Active </td>
+                                    <% } %>
+
+                                    <td>
+                                    	<a href="/hotels/<%= hotel._id %>/show"  
+                                            class="btn btn-sm btn-default">
+                                            <i class="fa fa-eye"> </i> Show
+                                        </a>
+                                        <a href="/hotels/<%= hotel._id %>/settings"  
+                                            class="btn btn-sm btn-default">
+                                            <i class="fa fa-cog"> </i> Settings
+                                        </a>
+                                        <button id="delete-hotel" data-delete="<%= hotel.id %>"
+                                            class="btn btn-sm btn-default">
+                                            <i class="fa fa-trash"> </i> Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                                <% i++ %>
+                            <% }); %>
+                        <% }else { %>
+                            <tr>
+                                <td class="text-center" colspan="8">
+                                    No hotels...
+                                </td>
+                            </tr>
+                        <% } %>
+	                </tbody>
+	            </table>
+	        </div>
+	    </div>
+	</div>
+<%+ endSection %>

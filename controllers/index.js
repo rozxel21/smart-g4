@@ -1,29 +1,31 @@
-	const express = require('express');
+const express = require('express');
 const router = express.Router();
-const util = require('util')
-const sql = require('../db/mysql-db');
+
+const util = require('util');
 const https = require('https');
 const base32 = require('base-32').default;
-const guid = require('uuid/v1');
-const bcrypt = require('bcrypt');
 
+const bcrypt = require('bcrypt');
 const passport = require('passport');
 
+let uniqid = require('uniqid');
+let generatePassword = require("password-generator");
+
+const fxn = require('../fxn');
+
 const User = require('../models/user');
-const AuthCode = require('../models/auth-code');
-const SysAdmin = require('../models/sys-admin');
+const Hotel = require('../models/hotel');
+const HotelAdmin = require('../models/hotel-admin');
 
-/******************
-*
-*	GET
-*
-*******************/
+/*
+	LOGIN
+*/
 
-router.get('/login', function (req, res){
+router.get('/sys/login', function (req, res){
 	
 	console.log('GET /login');
 	
-	if(req.isAuthenticated()) res.redirect('/users');
+	if(req.isAuthenticated()) res.redirect('/hotels');
 
 	res.render('admin/login', { 
 		message: req.flash('loginMessage')
@@ -32,23 +34,163 @@ router.get('/login', function (req, res){
 
 router.get('/logout', function(req, res){
 	console.log('GET /logout');
+	console.log(uniqid());
 
 	req.logout();
-  	res.redirect('/login');
+  	res.redirect('/sys/login');
 });
+
+/*
+	HOTELS
+*/
+
+router.get('/hotels', isLoggedIn, async (req, res, next) => {
+	console.log('GET /hotels');
+
+	try{
+		let hotels = await fxn.getHotels();
+
+		res.render('admin/hotel/index', {
+			page: 'hotels',
+			hotels: hotels,
+			message: {
+				status: req.flash('status'),
+				message: req.flash('message')
+			}
+		});
+	}catch(err){
+		console.log(err);
+	}
+});
+
+router.get('/hotels/:id/show', isLoggedIn, async (req, res, next) => {
+	let id = req.params.id;
+	console.log('GET /hotels/' + id + '/show');
+
+	try{
+		let hotel = await fxn.getHotelById(id);
+		let hotelAdmins = await fxn.getHotelAdmins(id);
+		
+		res.render('admin/hotel/show', {
+			page: 'hotels',
+			hotel: hotel,
+			hotelAdmins: hotelAdmins,
+			message: {
+				status: req.flash('status'),
+				message: req.flash('message')
+			}
+		});
+	}catch(err){
+		console.log(err);
+	}
+})
+
+router.get('/hotels/:id/settings', isLoggedIn, async (req, res, next) => {
+	let id = req.params.id;
+	console.log('GET /hotels/' + id + '/settings');
+
+	try{
+		let hotel = await fxn.getHotelById(id);
+
+		res.render('admin/hotel/setting', {
+			page: 'hotels',
+			hotel: hotel
+		});
+	}catch(err){
+		console.log(err);
+		res.status(5001);
+	}
+});
+
+router.get('/hotels/new', isLoggedIn, async (req, res, next) => {
+	res.render('admin/hotel/new', {
+		page: 'hotels'
+	});
+});
+
+router.post('/hotels/save', isLoggedIn, async (req, res, next) => {
+	try{
+		let newHotel = new Hotel;
+		newHotel.name = req.body.name;
+		newHotel.abrr = req.body.abrr
+		newHotel.smart_g4_proxy_endpoint = req.body.endpoint;
+		newHotel.client_id = uniqid();
+		newHotel.save(function(err, hotel){
+			if(err) res.status(500);
+
+			req.flash('status', 'success');
+			req.flash('message', 'New Hotel Successfully added.');
+
+			res.json(hotel);
+		});
+		
+	}catch(error){
+		console.log('error', error);
+		res.status(500);
+	}
+});
+
+router.get('/hotel-admin/:id/new', isLoggedIn, async (req, res, next) => {
+	let id = req.params.id;
+	console.log('GET /hotel-admin/' + id + '/new');
+
+	try{
+		let hotel = await fxn.getHotelById(id);
+		
+		res.render('admin/hotel-admin/new', {
+			page: 'hotels',
+			hotel: hotel
+		});
+	}catch(err){
+		console.log(err);
+	}
+});
+
+router.post('/hotel-admin/save', isLoggedIn, async (req, res, next) => {
+	console.log('POST /hotel-admin/save');
+
+	let raw_password = generatePassword();
+
+	bcrypt.hash(raw_password, 10, function(err, hash) {
+		if (err) res(err)
+		let newHotelAdmin = new HotelAdmin;
+		newHotelAdmin.hotel = req.body.hotel;
+		newHotelAdmin.name.first = req.body.first_name;
+		newHotelAdmin.name.last = req.body.last_name;
+		newHotelAdmin.email_address = req.body.email_address;
+		newHotelAdmin.username = req.body.username;
+		newHotelAdmin.password = hash;
+		newHotelAdmin.save(function (err, hotelAdmin){
+			if(err){
+				console.log(err);
+				res.status(500);
+			}
+
+			req.flash('status', 'success');
+			req.flash('message', 'New Hotel Admin Successfully added.');
+
+			res.json(raw_password);
+		});
+	});
+
+});
+
+/*
+	USERS
+*/
 
 router.get('/users', isLoggedIn, async (req, res, next) => {
 	console.log('GET /users');
 
 	try{
-		let users = await getUsers();
+		let users = await fxn.getUsers();
 		for(let i = 0; i < users.length; i++){
-			let room = await getRoomById(users[i].room_assign);
+			let room = await fxn.getRoomById(users[i].room_assign);
 			users[i].room_raw = room;
 			users[i].password = base32.decode(users[i].password);
 		}
 
-		res.render('admin/user', {
+		res.render('admin/user/index', {
 			page: 'users',
 			users: users,
 			message: {
@@ -66,13 +208,14 @@ router.get('/users/new', isLoggedIn, async (req, res, next) => {
 	console.log('GET /users/new');
 
 	try{
-		let rooms = await getRooms();
+		let rooms = await fxn.getRooms();
 		res.render('admin/user/new', {
 			page: 'users',
 			rooms: rooms
 		});
 	}catch(error){
-
+		console.log(error)
+		res.json({"error" : "Something went wrong"});
 	}
 });
 
@@ -82,8 +225,8 @@ router.get('/users/:id/setting', isLoggedIn, async (req, res) => {
 	console.log('GET /users/' + id + '/setting');
 
 	try {
-		let user = await getUserById(id);
-		let rooms = await getRooms();
+		let user = await fxn.getUserById(id);
+		let rooms = await fxn.getRooms();
 		res.render('admin/user/setting', {
 			page: 'users',
 			user: user,
@@ -94,16 +237,40 @@ router.get('/users/:id/setting', isLoggedIn, async (req, res) => {
 	}
 });
 
+router.post('/users/save', isLoggedIn, function (req, res) {
+	console.log('POST /users/save');
+
+	try{
+		let newUser = new User;
+		newUser.username = req.body.username;
+		newUser.password = base32.encode(req.body.password);
+		newUser.room_assign = req.body.room;
+		newUser.token = fxn.generateToken();
+		newUser.save(function(err, user){
+			if(err) res.status(500);
+
+			req.flash('status', 'success');
+			req.flash('message', 'New User Successfully added.');
+
+			res.json(user);
+		});
+		
+	}catch(error){
+		console.log('error', error);
+		res.status(500);
+	}
+});
+
 router.get('/rooms', isLoggedIn, async (req, res, next) => {
 	console.log('GET /rooms');
 
 	try{
-		let roomsRaw = await getRooms();
+		let roomsRaw = await fxn.getRooms();
 	
 		let rooms = new Array();
 
 		for (let i = 0; i < roomsRaw.length; i++) {
-			var children = await getRoomByParentLocation(roomsRaw[i].id);
+			var children = await fxn.getRoomByParentLocation(roomsRaw[i].id);
 			var temp = {
 				"id" : roomsRaw[i].id,
 				"location_name" : roomsRaw[i].location_name,
@@ -119,7 +286,7 @@ router.get('/rooms', isLoggedIn, async (req, res, next) => {
 			rooms.push(temp);
 		}
 
-		res.render('admin/room', {
+		res.render('admin/room/index', {
 			page: 'rooms',
 			rooms: rooms
 		});
@@ -135,16 +302,16 @@ router.get('/rooms/:id/show', isLoggedIn, async (req, res, next) => {
 	console.log('GET /rooms/' + id + '/show');
 
 	try{
-		let devicesRaw = await getDevicesByRoomId(id);
+		let devicesRaw = await fxn.getDevicesByRoomId(id);
 		let devices = new Array();
 
 		//console.log(devices);
 		for (let i = 0; i < devicesRaw.length; i++){
-			let nodes = await getNodeByDeviceId(devicesRaw[i].node_id);
+			let nodes = await fxn.getNodeByDeviceId(devicesRaw[i].node_id);
 			let g4modules = null;
 
 			if(nodes){
-				g4modules = await getG4ModuleByNodeId(nodes.g4module_id);
+				g4modules = await fxn.getG4ModuleByNodeId(nodes.g4module_id);
 			}
 
 			let temp = {
@@ -172,43 +339,16 @@ router.get('/rooms/:id/show', isLoggedIn, async (req, res, next) => {
 	}
 });
 
-/******************
-*
-*	POST
-*
-*******************/
+
 
 router.post('/login', passport.authenticate('local-login', {
     failureRedirect : '/login', // redirect back to the signup page if there is an error
     failureFlash : true // allow flash messages
 }), function(req, res){
-	res.redirect('/users');
+	res.redirect('/hotels');
 });
 
-router.post('/users/save', isLoggedIn, function (req, res) {
-	console.log('POST /users/save');
 
-	try{
-		let newUser = new User;
-		newUser.username = req.body.username;
-		newUser.password = base32.encode(req.body.password);
-		newUser.room_assign = req.body.room;
-		newUser.token = generateToken();
-		newUser.save(function(err, user){
-			if(err) res.status(500);
-
-			req.flash('status', 'success');
-			req.flash('message', 'New User Successfully added.');
-
-			res.json(user);
-		});
-
-		
-	}catch(error){
-		console.log('error', error);
-		res.status(500);
-	}
-});
 
 /******************
 *
@@ -239,8 +379,7 @@ router.put('/users/:id/update', isLoggedIn, function (req, res){
 
 router.put('/users/:id/change-password', isLoggedIn, function (req, res){
 	let id = req.params.id;
-
-	console.log('PUT /user/' + id + '/change-password');
+	console.log('PUT /users/' + id + '/change-password');
 
 	User.findById(id, function(err, user){
 		if(err) res.status(500);
@@ -251,6 +390,44 @@ router.put('/users/:id/change-password', isLoggedIn, function (req, res){
 		req.flash('status', 'success');
 		req.flash('message', 'User Password Successfully Changed.');
 		res.json({status: true});	
+	});
+});
+
+router.put('/hotels/:id/update', isLoggedIn, function (req, res){
+	let id = req.params.id;
+	console.log('PUT /hotels/' + id + '/update');
+
+	Hotel.findById(id, function(err, hotel){
+		if(err) res.status(500);
+
+		hotel.name = req.body.name;
+		hotel.smart_g4_proxy_endpoint = req.body.endpoint;
+		hotel.status = req.body.status;
+		hotel.updated_at = Date.now();
+		hotel.save();
+		req.flash('status', 'success');
+		req.flash('message', 'Hotel Successfully Updated.');
+		res.json({status: true});
+	});
+});
+
+router.put('/hotels/:id/g/client-id', isLoggedIn, function (req, res){
+	let id = req.params.id;
+	console.log('PUT /hotels/' + id + '/g/client-id');
+
+	var gid = uniqid();
+
+	Hotel.findById(id, function(err, hotel){
+		if(err) res.status(500);
+
+		hotel.set({ 
+			client_id: gid,
+			updated_at: Date.now() 
+		});
+		hotel.save();
+		req.flash('status', 'success');
+		req.flash('message', 'Hotel Successfully Updated.');
+		res.json(gid);
 	});
 });
 
@@ -271,111 +448,16 @@ router.delete('/users/:id/delete', isLoggedIn, function (req, res) {
 	});
 });
 
+router.delete('/hotels/:id/delete', isLoggedIn, function (req, res) {
+	let id = req.params.id;
 
-/******************
-*
-*	FUNCTIONS
-*
-*******************/
+	console.log('DELETE /hotels/' + id + '/delete');
 
-let getUserById = function(id){
-	return new Promise((resolve, reject) => {
-		User.findById(id, function(err, res){
-			if(err) reject(err);
-			resolve(res);
-		});
+	Hotel.deleteOne({'_id': id}, function(err) {
+		if(err) res.status(500);
+		res.status(200).json({status: true});
 	});
-}
-
-let generateToken = function (){
-	return {
-		access_token: guid(),
-		refresh_token: guid()
-	};
-}
-
-let getRoomById = function(id){
-	return new Promise((resolve, reject) => {
-		let query = "SELECT * FROM locations WHERE id = ?";
-		sql.query(query, [id], function (error, results, fields) {
-		  if (error) reject(error);
-		  resolve(results);
-		});
-	});
-};
-
-let getRooms = function(){
-	let query = "SELECT DISTINCT l2.* FROM locations AS l1 ";
-		query += "LEFT JOIN locations AS l2 ON l2.id = l1.parent_location ";
-		query += "WHERE l1.location_type = 1 AND l1.parent_location != 'NULL'";
-	return new Promise((resolve, reject) => {
-		sql.query(query, function (error, results, fields) {
-		  if (error) reject(error);
-		  resolve(results);
-		});
-	});
-};
-
-let getRoomByParentLocation = function(id){
-	return new Promise((resolve, reject) => {
-		let query = "SELECT * FROM locations WHERE parent_location = ?";
-		sql.query(query, [id], function (error, results, fields) {
-		  if (error) throw(error);
-		  resolve(results);
-		});
-	});
-};
-
-let getUsers = function(){
-	return new Promise((resolve, reject) => {
-		User.find(function(err, res){
-			if(err) reject(error);
-			resolve(res);
-		}).sort('-created_at');
-	});
-};
-
-let getUserByAccessToken = function(access_token){
-	return new Promise((resolve, reject) => {
-		User.findOne({ 'token.access_token': access_token }, function(err, res){
-			if(err) reject("user not found!");
-			resolve(res)
-		});
-	});
-}
-
-let getDevicesByRoomId = function(roomId){
-	return new Promise((resolve, reject) => {
-		let query = 'SELECT * FROM locations WHERE parent_location = ?';
-
-		sql.query(query, [roomId], function (error, results, fields) {
-			if (error) reject(error);
-	  		 resolve(results);
-		});
-	});
-}
-
-let getNodeByDeviceId = function(id){
-	return new Promise((resolve, reject) => {
-		let query = 'SELECT * FROM nodes WHERE id = ?';
-
-		sql.query(query, [id], function (error, results, fields) {
-			if (error) reject(error);
-	  		 resolve(results[0]);
-		});
-	});
-}
-
-let getG4ModuleByNodeId = function(id){
-	return new Promise((resolve, reject) => {
-		let query = 'SELECT * FROM g4modules WHERE id = ?';
-
-		sql.query(query, [id], function (error, results, fields) {
-			if (error) reject(error);
-	  		 resolve(results[0]);
-		});
-	});
-}
+});
 
 // route middleware to make sure
 function isLoggedIn(req, res, next) {
@@ -384,7 +466,7 @@ function isLoggedIn(req, res, next) {
 		return next();
 
 	// if they aren't redirect them to the home page
-	res.redirect('/login');
+	res.redirect('/sys/login');
 }
 
 module.exports = router;

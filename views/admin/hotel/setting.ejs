@@ -1,0 +1,81 @@
+<%+ extend('admin/index') %>
+
+<%+ section('content') %>
+    <div class="row wrapper border-bottom white-bg page-heading">
+        <div class="col-sm-4">
+            <h2>Hotel Settings</h2>
+            <ol class="breadcrumb">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href='/hotels'>Hotels</a>
+                </li>
+                <li>
+                    <a href='/hotels/<%= hotel.id %>/show'><%= hotel.abrr %></a>
+                </li>
+                <li class="active">
+                    <strong>Settings</strong>
+                </li>
+            </ol>
+        </div>
+        <div class="col-sm-8">
+        </div>
+    </div>
+
+    <div class="wrapper wrapper-content">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title">
+                <h5>Edit Hotel Info</h5>
+            </div>
+            <div class="ibox-content">
+                <div id='validation-message'></div>
+                <form id="hotel-edit-form" action="/hotels/<%= hotel.id %>/update" method="PUT" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Name</label>
+                        <div class="col-sm-10">
+                            <input type="text" name="hotel-name" value="<%= hotel.name %>" class="form-control" /> 
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Smart G4 Proxy Endpoint</label>
+                        <div class="col-sm-10">
+                            <input type="text" name="endpoint" value="<%= hotel.smart_g4_proxy_endpoint %>" class="form-control" minlength="5" /> 
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Status</label>
+                        <div class="col-sm-10">
+                            <select name="status" class="form-control">
+                                <option value="true">Activate</option>
+                                <option value="false">Deactivate</option>
+                            </select>
+                             <script type="text/javascript">
+                                $('select[name=status]').val('<%= hotel.status %>');
+                            </script>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-2"></div>
+                        <div class="col-sm-10">
+                            <button class="btn btn-primary" type="submit"><i class="fa fa-check"></i>&nbsp;Update</button>
+                        </div>
+                    </div>
+                </form> 
+            </div>
+        </div>
+
+        <div class="ibox float-e-margins">
+            <div class="ibox-title">
+                <h5>Client ID</h5>
+            </div>
+            <div class="ibox-content">
+                <div id='validation-message'></div>
+                <div class="text-center">
+                    <h1 id='hotel-client-id'><%= hotel.client_id %></h1> <br />
+                    <button id="generate-client-id" data-hotel="<%= hotel.id %>" class="btn btn-primary"><i class="fa fa-cogs"></i> Generate New Client ID</button>
+                </div>
+            </div>
+        </div>
+    </div>
+<%+ endSection %>
